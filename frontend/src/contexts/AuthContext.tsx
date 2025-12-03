@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 // Set axios base URL and default headers
-axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.baseURL = 'https://hmscity.onrender.com'
 
 interface User {
   id: number

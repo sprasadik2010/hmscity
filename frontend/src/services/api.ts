@@ -8,7 +8,7 @@ import {
   type DailySummary, type PaymentCollectionReport, type PatientStatistics
 } from '../types/index'; // Remove .ts extension
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'https://hmscity.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

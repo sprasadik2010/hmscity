@@ -9,37 +9,37 @@ export default defineConfig({
     proxy: {
       // Proxy all API requests to backend
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/auth': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/doctors': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/patients': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/bills': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/dashboard': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       },
       '/reports': {
-        target: 'http://localhost:8000',
+        target: 'https://hmscity.onrender.com',
         changeOrigin: true,
         secure: false,
       }
