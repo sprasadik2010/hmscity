@@ -5,6 +5,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy import func
+
 
 from database import get_db
 from ..schemas import Token, UserCreate
@@ -31,12 +33,14 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 def authenticate_user(db: Session, username: str, password: str):
-    user = db.query(User).filter(User.username.strip().lower() == username.strip().lower()).first()
-    if not user:
-        return False
-    if not verify_password(password, user.password):
-        return False
-    return user
+    # Case-insensitive and trimmed username comparison
+    user = db.query(User).filter(
+        func.lower(func.trim(User.username)) == username.strip().lower()
+    ).first()
+    
+    if user and verify_password(password, user.password):
+        return user
+    return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
