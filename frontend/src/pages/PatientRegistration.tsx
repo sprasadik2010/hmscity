@@ -54,7 +54,6 @@ const PatientRegistration = () => {
   // const [showPatientSearch, setShowPatientSearch] = useState(false)
 
   useEffect(() => {
-    setIsLoading(false)
     fetchDoctors()
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
@@ -77,8 +76,78 @@ const PatientRegistration = () => {
     const yearMonth = format(now, 'yyyyMM')
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
     return isIP 
-      ? `${yearMonth}-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`
-      : `${yearMonth}-${random}`
+      ? `IP-${yearMonth}-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`
+      : `OP-${yearMonth}-${random}`
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Validation
+    if (!formData.name || !formData.age || !formData.gender || !formData.complaint || !formData.phone || !formData.doctor_id) {
+      toast.error('Please fill required fields')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // Generate patient number
+      const patientNumber = generatePatientNumber()
+      
+      // Prepare data for API
+      const patientData = {
+        ...formData,
+        patient_number: patientNumber,
+        registration_date: format(new Date(), 'yyyy-MM-dd'),
+        registration_time: format(currentTime, 'HH:mm:ss')
+      }
+
+      console.log('Submitting patient data:', patientData)
+
+      // Call your patient registration API endpoint
+      await axios.post('/patients', patientData)
+      
+      toast.success(`Patient registered successfully! ${isIP ? 'IP' : 'OP'} Number: ${patientNumber}`)
+      
+      // Reset form after successful registration
+      setFormData({
+        name: '',
+        age: '',
+        gender: 'Male',
+        complaint: '',
+        house: '',
+        street: '',
+        place: '',
+        phone: '',
+        doctor_id: doctors[0]?.id || 0,
+        referred_by: '',
+        room: '',
+        is_ip: isIP
+      })
+      setOpNumber('')
+
+      // Optionally navigate to dashboard after 2 seconds
+      setTimeout(() => {
+        navigate('/dashboard')
+      }, 2000)
+
+    } catch (error: any) {
+      console.error('Registration error:', error)
+      // Check for specific error responses
+      if (error.response?.status === 400) {
+        toast.error(error.response?.data?.detail || 'Invalid data. Please check all fields.')
+      } else if (error.response?.status === 409) {
+        toast.error('Patient with similar details already exists')
+      } else if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.')
+        navigate('/login')
+      } else {
+        toast.error('Registration failed. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSearchOP = async () => {
@@ -219,7 +288,7 @@ const PatientRegistration = () => {
           </h2>
         </div>
 
-        <div className="p-6 space-y-8">
+        <form onSubmit={handleSubmit} className="p-6 space-y-8">
           {/* OP Number Search (Only for IP Registration) */}
           {isIP && (
             <div className="space-y-4">
@@ -492,7 +561,7 @@ const PatientRegistration = () => {
               </button>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   )
