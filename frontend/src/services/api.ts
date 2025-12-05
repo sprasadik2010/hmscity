@@ -3,12 +3,13 @@ import {
   type Patient, type PatientCreate, type PatientSearchResult,
   type Doctor, type DoctorCreate,
   type Visit, type VisitCreate,
-  type Bill, type BillCreate, // Make sure these are imported
+  type Bill, type BillCreate,
   type Payment, type PaymentCreate,
   type DailySummary, type PaymentCollectionReport, type PatientStatistics
-} from '../types/index'; // Remove .ts extension
+} from '../types/index';
 
-const API_BASE_URL = 'https://hmscity.onrender.com';
+// Use environment variable instead of hardcoded URL
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'https://hmscity.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

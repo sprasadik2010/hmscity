@@ -3,8 +3,14 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
-// Set axios base URL and default headers
-axios.defaults.baseURL = 'https://hmscity.onrender.com'
+// Get backend URL from environment variable
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://hmscity.onrender.com'
+
+// Set axios base URL from environment variable
+axios.defaults.baseURL = BACKEND_URL
+
+// Log for debugging (remove in production)
+console.log(`🌐 Using backend URL: ${BACKEND_URL}`)
 
 interface User {
   id: number
