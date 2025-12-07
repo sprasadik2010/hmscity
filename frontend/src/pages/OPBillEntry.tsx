@@ -50,6 +50,23 @@ interface PreviousBill {
   discount_amount: number
   net_amount: number
   category: string
+  patient_id: number
+  doctor_id: number
+}
+
+interface BillDetails {
+  bill: PreviousBill
+  items: Array<{
+    particular: string
+    doctor: string
+    department: string
+    unit: number
+    rate: number
+    amount: number
+    discount_percent: number
+    discount_amount: number
+    total: number
+  }>
 }
 
 const OPBillEntry = () => {
@@ -68,6 +85,7 @@ const OPBillEntry = () => {
   const [currentBillIndex, setCurrentBillIndex] = useState<number>(-1)
   const [isLoadingBills, setIsLoadingBills] = useState(false)
   const [showPreviousBills, setShowPreviousBills] = useState(false)
+  const [isLoadingBillDetails, setIsLoadingBillDetails] = useState(false)
   
   // Patient Form Data
   const [patientFormData, setPatientFormData] = useState({
@@ -190,13 +208,12 @@ const OPBillEntry = () => {
     }
   }
 
-  const handleLoadPreviousBill = (index: number) => {
+  const handleLoadPreviousBill = async (index: number) => {
     if (index < 0 || index >= previousBills.length) return
     
-    setCurrentBillIndex(index)
     const bill = previousBills[index]
     
-    // Show confirmation before loading bill (to avoid overwriting current work)
+    // Show confirmation before loading bill
     const confirmLoad = window.confirm(
       `Load bill ${bill.bill_number} from ${format(new Date(bill.bill_date), 'dd/MM/yyyy')}?\n` +
       `This will replace your current bill items.`
@@ -204,12 +221,64 @@ const OPBillEntry = () => {
     
     if (!confirmLoad) return
     
-    // Here you would need to fetch the full bill details including items
-    // For now, we'll just show a message
-    toast.success(`Viewing bill: ${bill.bill_number}`)
+    try {
+      setIsLoadingBillDetails(true)
+      
+      // Fetch complete bill details with items using your API
+      const response = await axios.get(`/bills/op/details/${bill.id}`)
+      const billDetails: BillDetails = response.data
+      
+      // Update current bill index
+      setCurrentBillIndex(index)
+      
+      // Populate form with loaded bill data
+      populateFormWithBill(billDetails)
+      
+      toast.success(`Bill ${bill.bill_number} loaded successfully`)
+    } catch (error: any) {
+      console.error('Error loading bill details:', error)
+      toast.error('Failed to load bill details')
+      setCurrentBillIndex(-1)
+    } finally {
+      setIsLoadingBillDetails(false)
+    }
+  }
+
+  const populateFormWithBill = (billDetails: BillDetails) => {
+    const { bill, items } = billDetails
     
-    // Note: To fully load a previous bill, you would need another API endpoint
-    // like GET /bills/op/details/{bill_id} that returns the complete bill with items
+    // Update bill form data
+    setBillFormData({
+      bill_type: 'Cash', // Your OP bills might not have this field
+      category: bill.category || 'General',
+      payment_mode: 'Cash'
+    })
+    
+    // Update patient form data with doctor from bill
+    if (selectedPatient) {
+      setPatientFormData(prev => ({
+        ...prev,
+        doctor_id: bill.doctor_id || prev.doctor_id
+      }))
+    }
+    
+    // Update bill items
+    const mappedItems: BillItem[] = items.map(item => ({
+      particular: item.particular,
+      doctor: item.doctor,
+      department: item.department,
+      unit: item.unit,
+      rate: item.rate,
+      amount: item.amount,
+      discount_percent: item.discount_percent,
+      discount_amount: item.discount_amount,
+      total: item.total
+    }))
+    
+    // If no items, keep default items
+    setBillItems(mappedItems.length > 0 ? mappedItems : [
+      { particular: 'Consultation', doctor: '', department: 'OPD', unit: 1, rate: 0, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
+    ])
   }
 
   const handleNextBill = () => {
@@ -612,6 +681,9 @@ const OPBillEntry = () => {
                     ) : (
                       <span className="text-blue-600 font-medium">
                         Viewing: {previousBills[currentBillIndex].bill_number}
+                        {isLoadingBillDetails && (
+                          <Loader2 className="ml-2 inline animate-spin" size={14} />
+                        )}
                       </span>
                     )}
                   </div>
@@ -619,7 +691,7 @@ const OPBillEntry = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handlePrevBill}
-                      disabled={currentBillIndex <= 0}
+                      disabled={currentBillIndex <= 0 || isLoadingBillDetails}
                       className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
                     >
                       <ChevronLeft size={16} />
@@ -631,7 +703,7 @@ const OPBillEntry = () => {
                     
                     <button
                       onClick={handleNextBill}
-                      disabled={currentBillIndex >= previousBills.length - 1}
+                      disabled={currentBillIndex >= previousBills.length - 1 || isLoadingBillDetails}
                       className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
                     >
                       <ChevronRight size={16} />
@@ -640,7 +712,8 @@ const OPBillEntry = () => {
                     {currentBillIndex !== -1 && (
                       <button
                         onClick={handleClearCurrentBill}
-                        className="ml-2 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200"
+                        disabled={isLoadingBillDetails}
+                        className="ml-2 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 disabled:opacity-50"
                       >
                         New Bill
                       </button>
@@ -665,7 +738,7 @@ const OPBillEntry = () => {
                         <tr 
                           key={bill.id} 
                           className={`border-t hover:bg-blue-50 ${
-                            currentBillIndex === index ? 'bg-blue-50' : ''
+                            currentBillIndex === index ? 'bg-blue-100' : ''
                           }`}
                         >
                           <td className="px-3 py-2">
@@ -689,7 +762,8 @@ const OPBillEntry = () => {
                           <td className="px-3 py-2">
                             <button
                               onClick={() => handleLoadPreviousBill(index)}
-                              className={`px-3 py-1 text-xs rounded ${
+                              disabled={isLoadingBillDetails}
+                              className={`px-3 py-1 text-xs rounded disabled:opacity-50 ${
                                 currentBillIndex === index
                                   ? 'bg-blue-600 text-white'
                                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -866,6 +940,19 @@ const OPBillEntry = () => {
                     <option value="Cash">Cash</option>
                     <option value="Credit">Credit</option>
                     <option value="Insurance">Insurance</option>
+                  </select>
+                </div>
+                
+                <div className="text-sm">
+                  <label className="text-gray-600 mr-2">Category:</label>
+                  <select
+                    value={billFormData.category}
+                    onChange={(e) => setBillFormData({...billFormData, category: e.target.value})}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value="General">General</option>
+                    <option value="ICU">ICU</option>
+                    <option value="Surgery">Surgery</option>
                   </select>
                 </div>
                 

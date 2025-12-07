@@ -50,6 +50,28 @@ interface PreviousBill {
   net_amount: number
   room: string
   category: string
+  patient_id: number
+  doctor_id: number
+  is_insurance: boolean
+  is_credit: boolean
+  insurance_company: string | null
+  third_party: string | null
+  service_tax: number
+  education_cess: number
+  she_education_cess: number
+  admission_date: string
+}
+
+interface BillDetails {
+  bill: PreviousBill
+  items: Array<{
+    particular: string
+    department: string
+    amount: number
+    discount_percent: number
+    discount_amount: number
+    total: number
+  }>
 }
 
 const IPBillEntry = () => {
@@ -68,6 +90,7 @@ const IPBillEntry = () => {
   const [currentBillIndex, setCurrentBillIndex] = useState<number>(-1)
   const [isLoadingBills, setIsLoadingBills] = useState(false)
   const [showPreviousBills, setShowPreviousBills] = useState(false)
+  const [isLoadingBillDetails, setIsLoadingBillDetails] = useState(false)
   
   // Patient Form Data
   const [patientFormData, setPatientFormData] = useState({
@@ -101,9 +124,9 @@ const IPBillEntry = () => {
   })
   
   const [billItems, setBillItems] = useState<BillItem[]>([
-    { particular: 'Room Charges', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
-    { particular: 'Doctor Fees', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
-    { particular: 'Medicine', department: 'Pharmacy', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
+    { particular: 'Room Charges', department: 'General', doctor_id: 0, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+    { particular: 'Doctor Fees', department: 'General', doctor_id: 0, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+    { particular: 'Medicine', department: 'Pharmacy', doctor_id: 0, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
   ])
 
   useEffect(() => {
@@ -203,13 +226,12 @@ const IPBillEntry = () => {
     }
   }
 
-  const handleLoadPreviousBill = (index: number) => {
+  const handleLoadPreviousBill = async (index: number) => {
     if (index < 0 || index >= previousBills.length) return
     
-    setCurrentBillIndex(index)
     const bill = previousBills[index]
     
-    // Show confirmation before loading bill (to avoid overwriting current work)
+    // Show confirmation before loading bill
     const confirmLoad = window.confirm(
       `Load bill ${bill.bill_number} from ${format(new Date(bill.bill_date), 'dd/MM/yyyy')}?\n` +
       `This will replace your current bill items.`
@@ -217,12 +239,73 @@ const IPBillEntry = () => {
     
     if (!confirmLoad) return
     
-    // Here you would need to fetch the full bill details including items
-    // For now, we'll just show a message
-    toast.success(`Viewing bill: ${bill.bill_number}`)
+    try {
+      setIsLoadingBillDetails(true)
+      
+      // Fetch complete bill details with items using your API
+      const response = await axios.get(`/bills/ip/details/${bill.id}`)
+      const billDetails: BillDetails = response.data
+      
+      // Update current bill index
+      setCurrentBillIndex(index)
+      
+      // Populate form with loaded bill data
+      populateFormWithBill(billDetails)
+      
+      toast.success(`Bill ${bill.bill_number} loaded successfully`)
+    } catch (error: any) {
+      console.error('Error loading bill details:', error)
+      toast.error('Failed to load bill details')
+      setCurrentBillIndex(-1)
+    } finally {
+      setIsLoadingBillDetails(false)
+    }
+  }
+
+  const populateFormWithBill = (billDetails: BillDetails) => {
+    const { bill, items } = billDetails
     
-    // Note: To fully load a previous bill, you would need another API endpoint
-    // like GET /bills/ip/details/{bill_id} that returns the complete bill with items
+    // Update bill form data
+    setBillFormData({
+      bill_type: bill.is_credit ? 'Credit' : 'Cash',
+      category: bill.category || 'General',
+      payment_mode: bill.is_credit ? 'Credit' : 'Cash',
+      is_insurance: bill.is_insurance || false,
+      is_credit: bill.is_credit || false,
+      insurance_company: bill.insurance_company || '',
+      policy_number: '',
+      service_tax: bill.service_tax || 0,
+      education_cess: bill.education_cess || 0,
+      she_education_cess: bill.she_education_cess || 0
+    })
+    
+    // Update patient form data (if available in bill)
+    if (selectedPatient) {
+      setPatientFormData(prev => ({
+        ...prev,
+        room: bill.room || prev.room,
+        admission_date: bill.admission_date || prev.admission_date,
+        doctor_id: bill.doctor_id || prev.doctor_id
+      }))
+    }
+    
+    // Update bill items
+    const mappedItems: BillItem[] = items.map(item => ({
+      particular: item.particular,
+      department: item.department,
+      doctor_id: selectedPatient?.doctor_id || patientFormData.doctor_id,
+      amount: item.amount,
+      discount_percent: item.discount_percent,
+      discount_amount: item.discount_amount,
+      total: item.total
+    }))
+    
+    // If no items, keep default items
+    setBillItems(mappedItems.length > 0 ? mappedItems : [
+      { particular: 'Room Charges', department: 'General', doctor_id: selectedPatient?.doctor_id || patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+      { particular: 'Doctor Fees', department: 'General', doctor_id: selectedPatient?.doctor_id || patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+      { particular: 'Medicine', department: 'Pharmacy', doctor_id: selectedPatient?.doctor_id || patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
+    ])
   }
 
   const handleNextBill = () => {
@@ -239,6 +322,7 @@ const IPBillEntry = () => {
 
   const handleClearCurrentBill = () => {
     setCurrentBillIndex(-1)
+    
     // Reset bill form to default (keeping patient selected)
     setBillFormData({
       bill_type: 'Cash',
@@ -253,10 +337,12 @@ const IPBillEntry = () => {
       she_education_cess: 0
     })
     
+    // Reset bill items with current patient's doctor
+    const doctorId = selectedPatient?.doctor_id || patientFormData.doctor_id
     setBillItems([
-      { particular: 'Room Charges', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
-      { particular: 'Doctor Fees', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
-      { particular: 'Medicine', department: 'Pharmacy', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
+      { particular: 'Room Charges', department: 'General', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+      { particular: 'Doctor Fees', department: 'General', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+      { particular: 'Medicine', department: 'Pharmacy', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
     ])
     
     toast('Ready to create new bill', {
@@ -287,9 +373,10 @@ const IPBillEntry = () => {
   }
 
   const addBillItem = () => {
+    const doctorId = selectedPatient?.doctor_id || patientFormData.doctor_id
     setBillItems([
       ...billItems,
-      { particular: '', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
+      { particular: '', department: 'General', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
     ])
   }
 
@@ -431,10 +518,11 @@ const IPBillEntry = () => {
       she_education_cess: 0
     })
     
+    const doctorId = doctors[0]?.id || 0
     setBillItems([
-      { particular: 'Room Charges', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
-      { particular: 'Doctor Fees', department: 'General', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
-      { particular: 'Medicine', department: 'Pharmacy', doctor_id: patientFormData.doctor_id, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
+      { particular: 'Room Charges', department: 'General', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+      { particular: 'Doctor Fees', department: 'General', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 },
+      { particular: 'Medicine', department: 'Pharmacy', doctor_id: doctorId, amount: 0, discount_percent: 0, discount_amount: 0, total: 0 }
     ])
     setSearchQuery('')
     setShowSearchResults(false)
@@ -667,6 +755,9 @@ const IPBillEntry = () => {
                     ) : (
                       <span className="text-blue-600 font-medium">
                         Viewing: {previousBills[currentBillIndex].bill_number}
+                        {isLoadingBillDetails && (
+                          <Loader2 className="ml-2 inline animate-spin" size={14} />
+                        )}
                       </span>
                     )}
                   </div>
@@ -674,7 +765,7 @@ const IPBillEntry = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handlePrevBill}
-                      disabled={currentBillIndex <= 0}
+                      disabled={currentBillIndex <= 0 || isLoadingBillDetails}
                       className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
                     >
                       <ChevronLeft size={16} />
@@ -686,7 +777,7 @@ const IPBillEntry = () => {
                     
                     <button
                       onClick={handleNextBill}
-                      disabled={currentBillIndex >= previousBills.length - 1}
+                      disabled={currentBillIndex >= previousBills.length - 1 || isLoadingBillDetails}
                       className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
                     >
                       <ChevronRight size={16} />
@@ -695,7 +786,8 @@ const IPBillEntry = () => {
                     {currentBillIndex !== -1 && (
                       <button
                         onClick={handleClearCurrentBill}
-                        className="ml-2 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200"
+                        disabled={isLoadingBillDetails}
+                        className="ml-2 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 disabled:opacity-50"
                       >
                         New Bill
                       </button>
@@ -721,7 +813,7 @@ const IPBillEntry = () => {
                         <tr 
                           key={bill.id} 
                           className={`border-t hover:bg-blue-50 ${
-                            currentBillIndex === index ? 'bg-blue-50' : ''
+                            currentBillIndex === index ? 'bg-blue-100' : ''
                           }`}
                         >
                           <td className="px-3 py-2">
@@ -746,7 +838,8 @@ const IPBillEntry = () => {
                           <td className="px-3 py-2">
                             <button
                               onClick={() => handleLoadPreviousBill(index)}
-                              className={`px-3 py-1 text-xs rounded ${
+                              disabled={isLoadingBillDetails}
+                              className={`px-3 py-1 text-xs rounded disabled:opacity-50 ${
                                 currentBillIndex === index
                                   ? 'bg-blue-600 text-white'
                                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -945,17 +1038,14 @@ const IPBillEntry = () => {
                   <label className="text-sm text-gray-600">Insurance</label>
                 </div>
                 
-                <div className="text-sm">
-                  <label className="text-gray-600 mr-2">Type:</label>
-                  <select
-                    value={billFormData.bill_type}
-                    onChange={(e) => setBillFormData({...billFormData, bill_type: e.target.value})}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Credit">Credit</option>
-                    <option value="Insurance">Insurance</option>
-                  </select>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={billFormData.is_credit}
+                    onChange={(e) => setBillFormData({...billFormData, is_credit: e.target.checked})}
+                    className="w-4 h-4"
+                  />
+                  <label className="text-sm text-gray-600">Credit</label>
                 </div>
                 
                 <div className="text-sm">
