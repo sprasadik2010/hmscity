@@ -115,6 +115,7 @@ class IPBillItemCreate(BaseModel):
     department: str
     amount: float
     discount_percent: float = 0
+    doctor_id: int = 0
 
 class IPBillItemResponse(IPBillItemCreate):
     id: int
@@ -130,7 +131,7 @@ class OPBillCreate(BaseModel):
     bill_type: str
     category: str
     doctor_id: int
-    discount_type: str
+    discount_type: str = "Percent"
     items: List[OPBillItemCreate]
 
 class OPBillResponse(BaseModel):
@@ -160,9 +161,9 @@ class IPBillCreate(BaseModel):
     is_insurance: bool = False
     category: str
     doctor_id: int
-    discount_type: str
+    discount_type: str = "Percent"
     room: str
-    admission_date: datetime
+    admission_date: date
     insurance_company: Optional[str] = None
     third_party: Optional[str] = None
     service_tax: float = 0
@@ -181,7 +182,7 @@ class IPBillResponse(BaseModel):
     doctor_id: int
     discount_type: str
     room: str
-    admission_date: datetime
+    admission_date: date
     insurance_company: Optional[str]
     third_party: Optional[str]
     total_amount: float

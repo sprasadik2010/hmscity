@@ -41,20 +41,6 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       color: 'from-blue-500 to-cyan-500'
     },
     { 
-      path: '/patient/registration', 
-      label: 'Patient Registration', 
-      icon: UserPlus,
-      description: 'OP & IP registration',
-      color: 'from-green-500 to-emerald-500'
-    },
-    { 
-      path: '/doctor/master', 
-      label: 'Doctor Master', 
-      icon: Stethoscope,
-      description: 'Manage doctors',
-      color: 'from-purple-500 to-indigo-500'
-    },
-    { 
       path: '/billing/op', 
       label: 'OP Billing', 
       icon: FileText,
@@ -68,6 +54,20 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       description: 'Inpatient billing',
       color: 'from-red-500 to-pink-500'
     },
+    // { 
+    //   path: '/patient/registration', 
+    //   label: 'Patient Registration', 
+    //   icon: UserPlus,
+    //   description: 'OP & IP registration',
+    //   color: 'from-green-500 to-emerald-500'
+    // },
+    { 
+      path: '/doctor/master', 
+      label: 'Doctor Master', 
+      icon: Stethoscope,
+      description: 'Manage doctors',
+      color: 'from-purple-500 to-indigo-500'
+    },
     { 
       path: '/reports', 
       label: 'Reports', 
@@ -75,13 +75,13 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       description: 'Analytics & reports',
       color: 'from-indigo-500 to-purple-500'
     },
-    { 
-      path: '/appointments', 
-      label: 'Appointments', 
-      icon: Calendar,
-      description: 'Schedule management',
-      color: 'from-teal-500 to-green-500'
-    },
+    // { 
+    //   path: '/appointments', 
+    //   label: 'Appointments', 
+    //   icon: Calendar,
+    //   description: 'Schedule management',
+    //   color: 'from-teal-500 to-green-500'
+    // },
   ]
 
   const handleLogout = () => {
@@ -142,7 +142,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       `}>
         <div className="h-full flex flex-col">
           {/* Logo */}
-          <div className="p-8 border-b border-blue-800">
+          <div className="p-1 border-b border-blue-800">
             <div className="flex items-center space-x-4 mb-4">
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
                 <Building className="text-white" size={32} />
@@ -152,15 +152,15 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <p className="text-blue-200 text-sm">Hospital Management System</p>
               </div>
             </div>
-            <div className="bg-blue-800/50 rounded-lg p-3 backdrop-blur-sm">
+            {/* <div className="bg-blue-800/50 rounded-lg p-3 backdrop-blur-sm">
               <p className="text-blue-100 text-sm">License: Professional</p>
               <p className="text-blue-200 text-xs">Version 2.0.1</p>
-            </div>
+            </div> */}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-6 space-y-2 overflow-y-auto">
-            <div className="px-4 mb-6">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            <div className="px-4 mb-2">
               <p className="text-blue-300 text-sm font-medium uppercase tracking-wider">MAIN NAVIGATION</p>
             </div>
             
@@ -210,15 +210,15 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-white">{user?.full_name}</p>
-                <p className="text-blue-200 text-sm">Receptionist/Admin</p>
+                {/* <p className="text-blue-200 text-sm">Receptionist/Admin</p>
                 <p className="text-blue-300 text-xs mt-1">
                   Last login: Today, {format(new Date(), 'hh:mm a')}
-                </p>
+                </p> */}
               </div>
             </div>
             
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-blue-100 rounded-xl transition-colors">
+              {/* <button className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-blue-100 rounded-xl transition-colors">
                 <Settings size={18} />
                 <span className="font-medium">Settings</span>
               </button>
@@ -226,7 +226,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               <button className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-white/10 hover:bg-white/20 text-blue-100 rounded-xl transition-colors">
                 <HelpCircle size={18} />
                 <span className="font-medium">Help & Support</span>
-              </button>
+              </button> */}
               
               <button
                 onClick={handleLogout}
@@ -249,7 +249,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+        {/* <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-gray-200">
           <div className="px-8 py-5 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
@@ -271,7 +271,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
             
             <div className="flex items-center space-x-6">
               {/* Quick Stats */}
-              <div className="hidden xl:flex items-center space-x-6">
+              {/* <div className="hidden xl:flex items-center space-x-6">
                 <div className="text-center px-4">
                   <p className="text-sm text-gray-600">Today's OPs</p>
                   <p className="text-lg font-bold text-blue-600">24</p>
@@ -284,10 +284,10 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   <p className="text-sm text-gray-600">Revenue</p>
                   <p className="text-lg font-bold text-green-600">₹45,820</p>
                 </div>
-              </div>
+              </div> */}
               
               {/* Action Buttons */}
-              <div className="flex items-center space-x-3">
+              {/* <div className="flex items-center space-x-3">
                 <button 
                   onClick={() => setIsNotificationsOpen(true)}
                   className="p-3 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-all relative"
@@ -315,10 +315,10 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
           
           {/* Breadcrumb */}
-          <div className="px-8 pb-4">
+          {/* <div className="px-8 pb-4">
             <div className="flex items-center text-sm text-gray-600">
               <Home size={16} className="mr-2" />
               <ChevronRight size={16} className="mx-2" />
@@ -331,7 +331,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               </span>
             </div>
           </div>
-        </header>
+        </header> */} 
 
         {/* Page Content */}
         <main className="flex-1 p-8 overflow-auto">

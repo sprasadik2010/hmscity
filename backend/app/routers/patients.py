@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List, Optional
 from datetime import datetime
 import random
@@ -92,33 +93,84 @@ async def get_patients(
     
     return response
 
-@router.get("/{patient_id}", response_model=PatientResponse)
-async def get_patient(
-    patient_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    patient = db.query(Patient).filter(Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+# @router.get("/{patient_id}", response_model=PatientResponse)
+# async def get_patient(
+#     patient_id: int,
+#     db: Session = Depends(get_db),
+#     current_user = Depends(get_current_user)
+# ):
+#     patient = db.query(Patient).filter(Patient.id == patient_id).first()
+#     if not patient:
+#         raise HTTPException(status_code=404, detail="Patient not found")
     
-    response = PatientResponse.from_orm(patient)
-    if patient.doctor:
-        response.doctor_name = patient.doctor.name
+#     response = PatientResponse.from_orm(patient)
+#     if patient.doctor:
+#         response.doctor_name = patient.doctor.name
     
-    return response
+#     return response
 
-@router.get("/search/op/{op_number}")
-async def search_by_op_number(
-    op_number: str,
+# @router.get("/search/op/{op_number}")
+# async def search_by_op_number(
+#     op_number: str,
+#     db: Session = Depends(get_db)
+# ):
+#     patient = db.query(Patient).filter(Patient.op_number == op_number).first()
+#     if not patient:
+#         raise HTTPException(status_code=404, detail="Patient not found")
+    
+#     response = PatientResponse.from_orm(patient)
+#     if patient.doctor:
+#         response.doctor_name = patient.doctor.name
+    
+#     return response
+
+@router.get("/search/op/{searchtext}")
+def search_op_by_searchtext(
+    searchtext: str,
     db: Session = Depends(get_db)
 ):
-    patient = db.query(Patient).filter(Patient.op_number == op_number).first()
-    if not patient:
+    patients = db.query(Patient).filter(
+        or_(
+            Patient.name.contains(searchtext),
+            Patient.complaint.contains(searchtext),
+            Patient.house.contains(searchtext),
+            Patient.street.contains(searchtext),
+            Patient.place.contains(searchtext),
+            Patient.phone.contains(searchtext),
+            Patient.referred_by.contains(searchtext),
+            Patient.room.contains(searchtext),
+            Patient.op_number.contains(searchtext),
+        ),
+        ~Patient.is_ip
+    ).all()
+
+    if not patients:
         raise HTTPException(status_code=404, detail="Patient not found")
-    
-    response = PatientResponse.from_orm(patient)
-    if patient.doctor:
-        response.doctor_name = patient.doctor.name
-    
-    return response
+
+    return patients
+
+
+@router.get("/search/ip/{searchtext}")
+def search_ip_by_searchtext(
+    searchtext: str,
+    db: Session = Depends(get_db)
+):
+    patients = db.query(Patient).filter(
+        or_(
+            Patient.name.contains(searchtext),
+            Patient.complaint.contains(searchtext),
+            Patient.house.contains(searchtext),
+            Patient.street.contains(searchtext),
+            Patient.place.contains(searchtext),
+            Patient.phone.contains(searchtext),
+            Patient.referred_by.contains(searchtext),
+            Patient.room.contains(searchtext),
+            Patient.ip_number.contains(searchtext),
+        ),
+        Patient.is_ip
+    ).all()
+
+    if not patients:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    return patients

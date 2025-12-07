@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Date
+from datetime import date, time,datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from datetime import datetime
 
 Base = declarative_base()
 
@@ -104,7 +104,8 @@ class OPBillItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     bill_id = Column(Integer, ForeignKey("op_bills.id"))
     particular = Column(String(200))
-    doctor = Column(String(100))
+    # doctor = Column(String(100))
+    doctor_id = Column(Integer, ForeignKey("doctors.id"))
     department = Column(String(100))
     unit = Column(Integer, default=1)
     rate = Column(Float, default=0)
@@ -130,7 +131,7 @@ class IPBill(Base):
     doctor_id = Column(Integer, ForeignKey("doctors.id"))
     discount_type = Column(String(50))
     room = Column(String(50))
-    admission_date = Column(DateTime)
+    admission_date = Column(Date)
     insurance_company = Column(String(100), nullable=True)
     third_party = Column(String(100), nullable=True)
     total_amount = Column(Float, default=0)
